@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "othello-td"
+version = "0.1.0"
+description = "Othello self-play agent trained with TD(λ)."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.23",
+    "tensorflow>=2.16",
+    "keras>=3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+notebook = ["jupyter"]
+
+[tool.setuptools.packages.find]
+include = ["othello*"]
+exclude = ["tests*"]
