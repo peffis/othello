@@ -1,2 +1,5 @@
 tasks.md
 CLAUDE.md
+__pycache__/
+*.pyc
+.pytest_cache/
