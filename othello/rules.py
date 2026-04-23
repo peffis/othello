@@ -1,6 +1,10 @@
 from .board import UNOCCUPIED, WHITE, BLACK
 
 
+DX = (-1, 0, 1, -1, 1, -1, 0, 1)
+DY = (-1, -1, -1, 0, 0, 1, 1, 1)
+
+
 def other_color(color):
     if color == WHITE:
         return BLACK
@@ -8,40 +12,54 @@ def other_color(color):
         return WHITE
 
 
-def make_move(x, y, color, b):
+def legal_flips(x, y, color, b):
+    """Squares that would be flipped if `color` plays at (x, y); empty list
+    if the move is illegal. Does not mutate `b`."""
     if x < 0 or x > 7 or y < 0 or y > 7 or b.get(x, y) != UNOCCUPIED:
-        return 0
+        return []
 
-    dx = [-1, 0, 1, -1, 1, -1, 0, 1]
-    dy = [-1, -1, -1, 0, 0, 1, 1, 1]
-
-    flipped = 0
+    flips = []
     otherColor = other_color(color)
 
     for d in range(8):
-        cx = x + dx[d]
-        cy = y + dy[d]
+        cx = x + DX[d]
+        cy = y + DY[d]
 
-        steppedOverOpponent = False
+        run_start = len(flips)
         while 0 <= cx < 8 and 0 <= cy < 8 and b.get(cx, cy) == otherColor:
-            cx += dx[d]
-            cy += dy[d]
-            steppedOverOpponent = True
+            flips.append((cx, cy))
+            cx += DX[d]
+            cy += DY[d]
 
-        if 0 <= cx < 8 and 0 <= cy < 8 and b.get(cx, cy) == color and steppedOverOpponent:
-            cx -= dx[d]
-            cy -= dy[d]
-            while cx != x or cy != y:
-                b.clear(cx, cy)
-                b.set(cx, cy, color)
-                cx -= dx[d]
-                cy -= dy[d]
-                flipped += 1
+        # Keep the run only if bounded by our own color; otherwise rewind.
+        if (
+            len(flips) == run_start
+            or not (0 <= cx < 8 and 0 <= cy < 8)
+            or b.get(cx, cy) != color
+        ):
+            del flips[run_start:]
 
-    if flipped > 0:
-        b.set(x, y, color)
+    return flips
 
-    return flipped
+
+def apply_flips(x, y, color, b, flips):
+    """Mutate `b`: place `color` at (x, y) and flip every square in `flips`.
+    Assumes legality has already been established."""
+    for cx, cy in flips:
+        b.clear(cx, cy)
+        b.set(cx, cy, color)
+    b.set(x, y, color)
+
+
+def make_move(x, y, color, b):
+    """Play `color` at (x, y) on `b`, mutating it in place. Returns the
+    number of flipped pieces, or 0 if the move is illegal (in which case
+    `b` is untouched)."""
+    flips = legal_flips(x, y, color, b)
+    if not flips:
+        return 0
+    apply_flips(x, y, color, b, flips)
+    return len(flips)
 
 
 def to_coord(x, y):
@@ -52,10 +70,11 @@ def get_possible_boards(b, color):
     boards = []
     for y in range(8):
         for x in range(8):
-            clone = b.copy()
-            flipped = make_move(x, y, color, clone)
-            if flipped > 0:
-                boards.append((clone, flipped, to_coord(x, y)))
+            flips = legal_flips(x, y, color, b)
+            if flips:
+                clone = b.copy()
+                apply_flips(x, y, color, clone, flips)
+                boards.append((clone, len(flips), to_coord(x, y)))
     return boards
 
 
