@@ -46,7 +46,12 @@ class TDPlayer(Player):
 
     def reset(self):
         self.predictions = []
-        self.eligibility = None
+        # Zero the eligibility Variables in place if they've already been
+        # allocated; otherwise leave as None for lazy allocation on the first
+        # contemplate call. Avoids creating fresh tf.Variables per game.
+        if self.eligibility is not None:
+            for ev in self.eligibility:
+                ev.assign(tf.zeros_like(ev))
         self.gamesPlayed += 1
 
     def make_move(self, b) -> Tuple[Board, str]:
@@ -59,7 +64,7 @@ class TDPlayer(Player):
             return (candidate, coord)
 
         X = np.concatenate([cand.toInputVector() for cand, _, _ in boards], axis=0)
-        preds = self.model.model(X, training=False).numpy().reshape(-1)
+        preds = self.model._forward(X).numpy().reshape(-1)
         if self.mycolor == BLACK:
             preds = -preds
         best_idx = int(np.argmax(preds))
@@ -91,17 +96,20 @@ class TDPlayer(Player):
             return
 
         X_values = b.toInputVector()
-        with tf.GradientTape() as tape:
-            p = self.model.model(X_values)
-        grads = tape.gradient(p, self.model.trainable_variables())
+        p, grads = self.model._forward_and_grad(X_values)
         p_scalar = float(p[0][0])
+
+        if self.eligibility is None:
+            # First contemplate ever on this TDPlayer — allocate the trace
+            # Variables matching the model's trainable-var shapes. Zero-init;
+            # the assign below will set them to g on this step.
+            self.eligibility = [tf.Variable(tf.zeros_like(g)) for g in grads]
 
         if self.predictions:
             self._apply_td_update(p_scalar, self.predictions[-1])
 
-        if self.eligibility is None:
-            self.eligibility = [tf.identity(g) for g in grads]
-        else:
-            self.eligibility = [LAMBDA * e + g for e, g in zip(self.eligibility, grads)]
+        # Running eligibility trace update:  e ← λ·e + ∇V(s_{t+1})
+        for ev, g in zip(self.eligibility, grads):
+            ev.assign(LAMBDA * ev + g)
 
         self.predictions.append(p_scalar)
