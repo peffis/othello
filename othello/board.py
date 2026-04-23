@@ -16,7 +16,7 @@ def color_to_string(color):
 
 class Board:
     def __init__(self):
-        self.board = [np.uint64(0), np.uint64(0)]
+        self.board = [0, 0]
         self.set(3, 3, WHITE)
         self.set(4, 4, WHITE)
         self.set(3, 4, BLACK)
@@ -29,19 +29,18 @@ class Board:
             index = 1
         else:
             return
-        mask = np.uint64(1) << np.uint64(y * 8 + x)
-        self.board[index] = np.bitwise_or(self.board[index], mask)
+        self.board[index] |= 1 << (y * 8 + x)
 
     def clear(self, x, y):
-        mask = np.uint64(1) << np.uint64(y * 8 + x)
-        self.board[0] = np.bitwise_and(self.board[0], ~mask)
-        self.board[1] = np.bitwise_and(self.board[1], ~mask)
+        mask = ~(1 << (y * 8 + x))
+        self.board[0] &= mask
+        self.board[1] &= mask
 
     def get(self, x, y):
-        mask = np.uint64(1) << np.uint64(y * 8 + x)
-        if np.bitwise_and(self.board[0], mask) > 0:
+        mask = 1 << (y * 8 + x)
+        if self.board[0] & mask:
             return WHITE
-        if np.bitwise_and(self.board[1], mask) > 0:
+        if self.board[1] & mask:
             return BLACK
         return UNOCCUPIED
 
