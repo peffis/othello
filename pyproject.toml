@@ -16,7 +16,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=7"]
-notebook = ["jupyter"]
+notebook = ["jupyter", "matplotlib"]
 
 [tool.setuptools.packages.find]
 include = ["othello*"]

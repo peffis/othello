@@ -43,6 +43,26 @@ class GreedyPlayer(Player):
         return (None, '')
 
 
+class NoisyGreedyPlayer(Player):
+    """Epsilon-noisy greedy: with probability `epsilon` picks a random legal
+    move, otherwise plays the max-flip move. Exists so evaluations against
+    an otherwise deterministic opponent can still average over variance."""
+
+    def __init__(self, c, epsilon=0.1):
+        super().__init__(c)
+        self.epsilon = epsilon
+
+    def make_move(self, b) -> Tuple[Board, str]:
+        boards = get_possible_boards(b, self.mycolor)
+        if not boards:
+            return (None, '')
+        if self.epsilon > 0 and random.random() < self.epsilon:
+            candidate, _, coord = random.choice(boards)
+            return (candidate, coord)
+        candidate, _, coord = max(boards, key=lambda bs: bs[1])
+        return (candidate, coord)
+
+
 class InteractivePlayer(Player):
     def make_move(self, b) -> Tuple[Board, str]:
         boards = get_possible_boards(b, self.mycolor)
