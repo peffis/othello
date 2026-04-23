@@ -51,12 +51,9 @@ class Board:
         return clone
 
     def toInputVector(self):
-        v = np.zeros(128)
-        for j in range(2):
-            piecesWord = self.board[j]
-            for bit in range(64):
-                v[j * 64 + bit] = np.bitwise_and(piecesWord >> np.uint64(bit), np.uint64(1))
-        return v[np.newaxis]
+        words = np.array([self.board[0], self.board[1]], dtype=np.uint64)
+        bits = np.unpackbits(words.view(np.uint8), bitorder='little')
+        return bits.astype(np.float32, copy=False)[np.newaxis]
 
     def count(self):
         whites = self.board[0]
