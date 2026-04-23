@@ -19,7 +19,7 @@ def legal_flips(x, y, color, b):
         return []
 
     flips = []
-    otherColor = other_color(color)
+    otherColor = 3 - color  # inline of other_color(color) for WHITE=1, BLACK=2
 
     for d in range(8):
         cx = x + DX[d]
