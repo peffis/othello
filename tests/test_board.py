@@ -41,3 +41,19 @@ def test_copy_is_independent():
     assert c.get(0, 0) == UNOCCUPIED
     c.set(7, 7, BLACK)
     assert b.get(7, 7) == UNOCCUPIED
+
+
+def test_toInputTensor_shape_and_positions():
+    """Shape (1, 8, 8, 2) with channel 0 = WHITE, channel 1 = BLACK.
+    Starting board: WHITE at (3,3) and (4,4); BLACK at (3,4) and (4,3).
+    Note that in a (y, x, c) tensor, a piece at (x, y) is at t[0, y, x, c]."""
+    b = Board()
+    t = b.toInputTensor()
+    assert t.shape == (1, 8, 8, 2)
+    assert t.sum() == 4
+    # WHITE (channel 0) at (x=3, y=3) and (x=4, y=4).
+    assert t[0, 3, 3, 0] == 1
+    assert t[0, 4, 4, 0] == 1
+    # BLACK (channel 1) at (x=3, y=4) and (x=4, y=3).
+    assert t[0, 4, 3, 1] == 1
+    assert t[0, 3, 4, 1] == 1

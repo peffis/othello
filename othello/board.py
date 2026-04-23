@@ -54,6 +54,16 @@ class Board:
         bits = np.unpackbits(words.view(np.uint8), bitorder='little')
         return bits.astype(np.float32, copy=False)[np.newaxis]
 
+    def toInputTensor(self):
+        """Board as a (1, 8, 8, 2) channels-last tensor, for Conv2D inputs.
+        Channel 0 = WHITE plane, channel 1 = BLACK plane. Bit i = (y, x)
+        where y = i // 8, x = i % 8 — the same layout toInputVector uses."""
+        words = np.array([self.board[0], self.board[1]], dtype=np.uint64)
+        bits = np.unpackbits(words.view(np.uint8), bitorder='little')
+        return (bits.astype(np.float32, copy=False)
+                    .reshape(2, 8, 8)
+                    .transpose(1, 2, 0)[np.newaxis])
+
     def count(self):
         whites = self.board[0]
         blacks = self.board[1]
